@@ -1,0 +1,68 @@
+# Public demo pages only. No login sites, no customer data.
+# Format matches the engine: `wait` is a CSS selector that must exist after load.
+sites:
+  - name: books
+    url: https://books.toscrape.com/
+    wait: article.product_pod
+    min_rows: 10
+    key: title
+    js:
+      - |
+        (() => [...document.querySelectorAll('article.product_pod')].map((el) => ({
+          title: el.querySelector('h3 a')?.getAttribute('title') || '',
+          price: el.querySelector('.price_color')?.textContent || '',
+          availability: el.querySelector('.availability')?.innerText.trim() || ''
+        })))()
+      - |
+        (() => [...document.querySelectorAll('.product_pod')].map((el) => ({
+          title: el.querySelector('h3 a')?.getAttribute('title') || '',
+          price: (el.innerText.match(/£\d+\.\d+/) || [''])[0]
+        })))()
+
+  - name: quotes
+    url: https://quotes.toscrape.com/
+    wait: 'div.quote'
+    min_rows: 8
+    pages: 2
+    page_url: "https://quotes.toscrape.com/page/{page}/"
+    key: text
+    js:
+      - |
+        (() => [...document.querySelectorAll('div.quote')].map((el) => ({
+          text: el.querySelector('span.text')?.textContent.trim() || '',
+          author: el.querySelector('small.author')?.textContent.trim() || '',
+          tags: [...el.querySelectorAll('a.tag')].map((a) => a.textContent.trim()).join(', ')
+        })))()
+      - |
+        (() => [...document.querySelectorAll('span.text')].map((el) => ({text: el.textContent.trim()})))()
+
+  - name: hackernews
+    url: https://news.ycombinator.com/
+    wait: tr.athing
+    min_rows: 10
+    key: title
+    js:
+      - |
+        (() => [...document.querySelectorAll('tr.athing')].map((row) => {
+          const link = row.querySelector('.titleline a');
+          const sub = row.nextElementSibling ? row.nextElementSibling.innerText : '';
+          const points = sub.match(/([\d,]+)\s*points?/);
+          const comments = sub.match(/([\d,]+)\s*comments?/);
+          return {title: link ? link.innerText : '', url: link ? link.href : '',
+                  points: points ? points[1] : '', comments: comments ? comments[1] : ''};
+        }).slice(0, 30))()
+      - |
+        (() => [...document.querySelectorAll('tr.athing .titleline a')].map((a) => ({title: a.innerText, url: a.href})).slice(0, 30))()
+
+  - name: webscraper-demo
+    url: https://webscraper.io/test-sites/e-commerce/allinone
+    wait: .product-wrapper, .thumbnail
+    min_rows: 3
+    key: title
+    js:
+      - |
+        (() => [...document.querySelectorAll('.product-wrapper, .thumbnail')].map((el) => ({
+          title: el.querySelector('.title')?.innerText.trim() || '',
+          price: el.querySelector('.price')?.innerText.trim() || '',
+          reviews: el.querySelector('.review-count')?.innerText.trim() || ''
+        })))()
